@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Management System Dashboard</title>
+    <style>
+        /* --- CSS Variables & Reset --- */
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary: #64748b;
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --radius: 0.5rem;
+            --sidebar-width: 260px;
+            --header-height: 64px;
+        }
+
+        .dark-mode {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        
+        body { background-color: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; transition: background 0.3s, color 0.3s; }
+        
+        /* --- Scrollbar --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* --- Sidebar Navigation --- */
+        aside {
+            width: var(--sidebar-width);
+            background-color: var(--bg-card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            z-index: 10;
+        }
+
+        .brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        nav button {
+            background: none;
+            border: none;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            cursor: pointer;
+            border-radius: var(--radius);
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.2s;
+            margin-bottom: 0.25rem;
+        }
+
+        nav button:hover { background-color: var(--bg-body); color: var(--primary); }
+        nav button.active { background-color: var(--primary); color: white; }
+
+        /* --- Main Layout --- */
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+        /* --- Header --- */
+        header {
+            height: var(--header-height);
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+        }
+
+        .header-left { display: flex; gap: 1rem; align-items: center; }
+        .header-right { display: flex; gap: 1rem; align-items: center; }
+
+        .global-search {
+            position: relative;
+        }
+        .global-search input {
+            padding: 0.5rem 1rem 0.5rem 2.25rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg-body);
+            color: var(--text-main);
+            width: 250px;
+        }
+        .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 16px; height: 16px; }
+
+        /* --- Module Content Area --- */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .module { display: none; animation: fadeIn 0.3s ease; }
+        .module.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Controls & Toolbars --- */
+        .controls-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+            background: var(--bg-card);
+            padding: 1rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .control-group { display: flex; gap: 0.5rem; align-items: center; }
+        
+        button.btn {
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-main);
+            cursor: pointer;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s;
+        }
+        button.btn:hover { border-color: var(--primary); color: var(--primary); }
+        button.btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+        button.btn-primary:hover { background: var(--primary-hover); }
+        button.btn.active-tab { background: var(--text-main); color: var(--bg-card); border-color: var(--text-main); }
+
+        select, input[type="date"] {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg-body);
+            color: var(--text-main);
+        }
+
+        /* --- Specific Modules Styles --- */
+        
+        /* Module 1: Bed Status */
+        .summary-banner {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            padding: 1rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .stat-val { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .stat-label { font-size: 0.875rem; color: var(--text-muted); }
+
+        /* Bed Grid Layout */
+        .bed-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .bed-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .bed-card:hover { transform: translateY(-2px); border-color: var(--primary); }
+        .bed-card.occupied { border-left: 4px solid var(--danger); }
+        .bed-card.available { border-left: 4px solid var(--success); }
+        .bed-number { font-size: 1.5rem; font-weight: bold; }
+        .patient-name { font-size: 0.9rem; font-weight: 600; margin-top: 0.25rem; }
+        .bed-status-tag { position: absolute; top: 0.5rem; right: 0.5rem; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: var(--bg-body); }
+
+        /* OPD List */
+        .view-layout {
+            display: flex;
+            gap: 1rem;
+            height: calc(100vh - 200px);
+        }
+        .opd-details { flex: 2; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; }
+        .opd-grid-view { flex: 2; display: none; gap: 1rem; overflow-y: auto; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-body); font-weight: 600; font-size: 0.875rem; color: var(--text-muted); }
+        tr:hover { background: var(--bg-body); }
+        
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-waiting { background: #fef3c7; color: #d97706; }
+        .badge-consult { background: #dbeafe; color: #2563eb; }
+        .badge-referred { background: #fee2e2; color: #dc2626; }
+        .badge-admitted { background: #d1fae5; color: #059669; }
+
+        /* Endoscopy & OT */
+        .report-table-container { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+        .report-table-container table { width: 100%; font-size: 0.9rem; }
+        .report-table-container th, .report-table-container td { padding: 0.75rem; border-bottom: 1px solid var(--border); }
+
+        /* --- Drawer (Settings) --- */
+        .drawer-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 50;
+            display: none;
+        }
+        .drawer {
+            position: absolute; top: 0; right: 0; width: 350px; height: 100%;
+            background: var(--bg-card); z-index: 51;
+            padding: 1.5rem;
+            box-shadow: -4px 0 15px rgba(0,0,0,0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        .drawer.open { transform: translateX(0); }
+        .drawer h2 { margin-bottom: 1.5rem; font-size: 1.25rem; }
+
+        .setting-item { margin-bottom: 1.5rem; }
+        .setting-item label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem; }
+        .setting-item input[type="text"], .setting-item input[type="number"], .setting-item textarea {
+            width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-body); color: var(--text-main);
+        }
+
+        /* --- Toast Notification --- */
+        .toast {
+            position: fixed; bottom: 20px; right: 20px;
+            background: var(--text-main); color: var(--bg-card);
+            padding: 0.75rem 1.5rem; border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transform: translateY(100px); opacity: 0;
+            transition: all 0.3s ease; z-index: 100;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        /* --- Print Styles --- */
+        @media print {
+            aside, header, .controls-bar, .summary-banner, .toast { display: none !important; }
+            .main-wrapper { display: block; height: auto; overflow: visible; }
+            .content-area { padding: 0; overflow: visible; }
+            .module { display: block !important; }
+            body, .report-table-container { background: white; color: black; border: none; }
+            table { border: 1px solid #000; }
+            th, td { border: 1px solid #000; padding: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside>
+        <div class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            MedDash
+        </div>
+        <nav>
+            <button class="nav-btn active" onclick="switchModule('beds')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20"/><path d="M5 20v-8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8"/><path d="M9 10V7a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>
+                Daily Bed Status
+            </button>
+            <button class="nav-btn" onclick="switchModule('opd')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                OPD List
+            </button>
+            <button class="nav-btn" onclick="switchModule('endoscopy')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="M12 2v20"/><path d="M12 22a6 6 0 0 0 6-6"/><path d="M12 2a6 6 0 0 1-6 6"/></svg>
+                Endoscopy
+            </button>
+            <button class="nav-btn" onclick="switchModule('ot')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                Elective OT List
+            </button>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <header>
+            <div class="header-left">
+                <button class="btn" onclick="toggleSettings()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    Settings
+                </button>
+                <div class="global-search">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <input type="text" id="globalSearch" placeholder="Search Name, Reg No, Bed No..." onkeyup="handleGlobalSearch()">
+                </div>
+            </div>
+            <div class="header-right">
+                <input type="date" id="datePicker" onchange="updateDate(this.value)">
+                <button class="btn btn-primary" onclick="showToast('Data saved successfully!')">Save Data</button>
+            </div>
+        </header>
+
+        <div class="content-area">
+            
+            <!-- MODULE 1: Daily Bed Status -->
+            <div id="bed-module" class="module active">
+                <div class="controls-bar">
+                    <div class="control-group">
+                        <span>Filter:</span>
+                        <button class="btn active-tab" onclick="setBedFilter('all')">All</button>
+                        <button class="btn" onclick="setBedFilter('NA')">New Admissions</button>
+                        <button class="btn" onclick="setBedFilter('DC')">Discharges</button>
+                        <button class="btn" onclick="setBedFilter('Occ')">Occupied</button>
+                    </div>
+                    <div class="control-group">
+                        <span>View:</span>
+                        <button class="btn active-tab" onclick="setBedView('grid')">Bed Layout Grid</button>
+                        <button class="btn" onclick="setBedView('table')">Table View</button>
+                        <button class="btn" onclick="setBedView('cards')">Patient Cards</button>
+                    </div>
+                    <div class="control-group" style="margin-left: auto;">
+                        <button class="btn" onclick="showToast('Exporting PDF...')">Export PDF</button>
+                        <button class="btn btn-primary" onclick="showToast('Add Patient Modal Opened')">+ Add Patient</button>
+                    </div>
+                </div>
+
+                <div class="summary-banner">
+                    <div class="stat-card">
+                        <div class="stat-val" id="stat-male">0</div>
+                        <div class="stat-label">Total Male</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-val" id="stat-female">0</div>
+                        <div class="stat-label">Total Female</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-val" id="stat-occupied">0</div>
+                        <div class="stat-label">Total Occupied</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-val" id="stat-transfers">0</div>
+                        <div class="stat-label">Transfers</div>
+                    </div>
+                    <div class="stat-card" style="border-left: 4px solid var(--primary);">
+                        <div class="stat-val" id="stat-remaining">0</div>
+                        <div class="stat-label">Remaining Beds</div>
+                    </div>
+                </div>
+
+                <!-- Bed Grid or Table Container -->
+                <div id="bed-container" class="bed-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- MODULE 2: OPD List -->
+            <div id="opd-module" class="module">
+                <div class="controls-bar">
+                    <div class="control-group">
+                        <span>Format:</span>
+                        <select id="opdFormat" onchange="renderOPD()">
+                            <option value="detailed">Detailed List</option>
+                            <option value="compact">Compact Grid</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <span>Filter:</span>
+                        <select id="opdFilter" onchange="renderOPD()">
+                            <option value="all">All Status</option>
+                            <option value="Waiting">Waiting</option>
+                            <option value="In Consultation">In Consultation</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="margin-left: auto;">
+                        <button class="btn" onclick="showToast('Generating PDF Report...')">Print / Share PDF</button>
+                    </div>
+                </div>
+
+                <div class="view-layout">
+                    <div class="opd-details">
+                        <table id="opd-table">
+                            <thead>
+                                <tr>
+                                    <th>Reg No</th>
+                                    <th>Patient Name</th>
+                                    <th>Age/Sex</th>
+                                    <th>Diagnosis</th>
+                                    <th>Status</th>
+                                    <th>Attending</th>
+                                </tr>
+                            </thead>
+                            <tbody id="opd-table-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Compact Grid View (Hidden by default) -->
+                    <div id="opd-grid-view" class="opd-grid-view">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODULE 3: Endoscopy & Laparoscopy -->
+            <div id="endoscopy-module" class="module">
+                <div class="controls-bar">
+                    <div class="control-group">
+                        <label>Date:</label>
+                        <input type="date" id="endo-date">
+                    </div>
+                    <div class="control-group">
+                        <label>Procedure:</label>
+                        <select id="endo-proc">
+                            <option value="all">All Procedures</option>
+                            <option value="OGDS">OGDS</option>
+                            <option value="Colonoscopy">Colonoscopy</option>
+                            <option value="Laparoscopy">Laparoscopy</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Layout Config:</label>
+                        <select id="endo-layout" onchange="renderEndoscopy()">
+                            <option value="standard">Standard</option>
+                            <option value="official">Official Unit Header</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="margin-left: auto;">
+                        <button class="btn" onclick="window.print()">Print Paper</button>
+                    </div>
+                </div>
+
+                <div class="report-table-container">
+                    <table id="endo-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Procedure</th>
+                                <th>Endoscopist</th>
+                                <th>Indication</th>
+                                <th>Clinical Findings</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="endo-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MODULE 4: Elective OT List -->
+            <div id="ot-module" class="module">
+                <div class="controls-bar">
+                    <div class="control-group">
+                        <label>Date/Month:</label>
+                        <input type="date" id="ot-date">
+                    </div>
+                    <div class="control-group">
+                        <label>Filter:</label>
+                        <select id="ot-filter">
+                            <option value="daily">Daily OT</option>
+                            <option value="monthly">Monthly OT Stats</option>
+                            <option value="surgeon">Surgeon-wise</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="margin-left: auto;">
+                        <button class="btn" onclick="window.print()">Export Schedule</button>
+                        <button class="btn btn-primary" onclick="showToast('OT List Saved & Committed')">Save & Commit</button>
+                    </div>
+                </div>
+
+                <div class="report-table-container">
+                    <table id="ot-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Surgeon</th>
+                                <th>Assistants</th>
+                                <th>Patient Name</th>
+                                <th>Diagnosis</th>
+                                <th>Procedure</th>
+                                <th>PreMed</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ot-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Settings Drawer -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="toggleSettings()"></div>
+    <div class="drawer" id="settingsDrawer">
+        <h2>Settings</h2>
+        
+        <div class="setting-item">
+            <label>Theme</label>
+            <button class="btn" onclick="toggleTheme()">Toggle Light/Dark Mode</button>
+        </div>
+        
+        <div class="setting-item">
+            <label>Bed Capacity Total</label>
+            <input type="number" value="50">
+        </div>
+
+        <div class="setting-item">
+            <label>Mnemonics Dictionary</label>
+            <textarea rows="3">H/O: History of...
+HPI: History of Present Illness
+PE: Physical Exam</textarea>
+        </div>
+
+        <div class="setting-item">
+            <label>User Credentials</label>
+            <input type="text" value="Dr. Admin" placeholder="Current User">
+        </div>
+
+        <button class="btn btn-primary" style="width: 100%" onclick="saveSettings()">Save Changes</button>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast">Action Successful</div>
+
+    <script>
+        // --- Mock Data ---
+        const bedsData = Array.from({length: 20}, (_, i) => ({
+            id: i + 1,
+            number: `B-${100 + i}`,
+            patient: i % 3 === 0 ? `Patient ${i+1}` : null,
+            gender: i % 3 === 0 ? 'M' : 'F',
+            status: i % 5 === 0 ? 'NA' : (i % 7 === 0 ? 'DC' : 'Occ') // Randomize status
+        }));
+
+        const opdData = [
+            { reg: 'OPD-001', name: 'John Doe', age: '45', sex: 'M', diag: 'Hypertension', status: 'In Consultation', doc: 'Dr. Smith' },
+            { reg: 'OPD-002', name: 'Jane Smith', age: '32', sex: 'F', diag: 'Fever', status: 'Waiting', doc: 'Dr. Jones' },
+            { reg: 'OPD-003', name: 'Robert Brown', age: '28', sex: 'M', diag: 'Fracture', status: 'Referred', doc: 'Dr. Smith' },
+            { reg: 'OPD-004', name: 'Emily Davis', age: '55', sex: 'F', diag: 'Diabetes', status: 'Admitted', doc: 'Dr. Lee' },
+            { reg: 'OPD-005', name: 'Michael Wilson', age: '40', sex: 'M', diag: 'Cough', status: 'Waiting', doc: 'Dr. Jones' },
+        ];
+
+        const endoData = [
+            { time: '09:00', proc: 'OGDS', doc: 'Dr. A. Smith', ind: 'Upper GI bleed', find: 'Mallory Weiss tear', notes: 'Stable' },
+            { time: '10:30', proc: 'Colonoscopy', doc: 'Dr. B. Jones', ind: 'Constipation', find: 'Normal', notes: 'No polyps' },
+            { time: '13:00', proc: 'Laparoscopy', doc: 'Dr. C. Lee', ind: 'Appendicitis', find: 'Acute inflamed appendix', notes: 'Appendectomy done' },
+        ];
+
+        const otData = [
+            { time: '08:00', surgeon: 'Dr. Smith', assist: 'Dr. Doe', pName: 'Alice', diag: 'Appendicitis', proc: 'Appendectomy', prem: 'Ampicillin', status: 'Completed' },
+            { time: '09:30', surgeon: 'Dr. Jones', assist: 'Dr. Ray', pName: 'Bob', diag: 'Biliary Stones', proc: 'Laparoscopic Cholecystectomy', prem: 'PPI', status: 'In Progress' },
+            { time: '11:00', surgeon: 'Dr. Lee', assist: '-', pName: 'Charlie', diag: 'Hernia', proc: 'Herniorrhaphy', prem: 'None', status: 'Scheduled' },
+        ];
+
+        // --- State ---
+        let currentBedFilter = 'all';
+        let currentBedView = 'grid';
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('datePicker').value = today;
+            document.getElementById('endo-date').value = today;
+            document.getElementById('ot-date').value = today;
+
+            renderBedStatus();
+            renderOPD();
+            renderEndoscopy();
+            renderOT();
+            updateSummaryBanner();
+        });
+
+        // --- Navigation ---
+        function switchModule(moduleId) {
+            // Update Sidebar
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            // Update Module Visibility
+            document.querySelectorAll('.module').forEach(mod => mod.classList.remove('active'));
+            document.getElementById(`${moduleId}-module`).classList.add('active');
+        }
+
+        // --- Module 1: Bed Status Logic ---
+        function setBedFilter(filter) {
+            currentBedFilter = filter;
+            // Update UI buttons
+            const buttons = document.querySelectorAll('.controls-bar .btn');
+            buttons.forEach(b => {
+                if(b.textContent.includes(filter) || (filter === 'all' && b.textContent === 'All')) {
+                    b.classList.add('active-tab');
+                } else if (['NA', 'DC', 'Occ'].includes(b.textContent)) {
+                    b.classList.remove('active-tab');
+                }
+            });
+            renderBedStatus();
+        }
+
+        function setBedView(view) {
+            currentBedView = view;
+            // Update UI buttons
+            const buttons = document.querySelectorAll('.controls-bar .btn');
+            buttons.forEach(b => {
+                if(b.textContent.includes(view)) b.classList.add('active-tab');
+                else if(['Grid', 'Table', 'Cards'].some(x => b.textContent.includes(x))) b.classList.remove('active-tab');
+            });
+            renderBedStatus();
+        }
+
+        function renderBedStatus() {
+            const container = document.getElementById('bed-container');
+            container.innerHTML = '';
+
+            // Filter Data
+            let filteredData = bedsData;
+            if (currentBedFilter === 'NA') filteredData = bedsData.filter(b => b.status === 'NA');
+            else if (currentBedFilter === 'DC') filteredData = bedsData.filter(b => b.status === 'DC');
+            else if (currentBedFilter === 'Occ') filteredData = bedsData.filter(b => b.status === 'Occ');
+
+            // Apply Search
+            const searchVal = document.getElementById('globalSearch').value.toLowerCase();
+            if(searchVal) {
+                filteredData = filteredData.filter(b => 
+                    b.patient?.toLowerCase().includes(searchVal) || 
+                    b.number.toLowerCase().includes(searchVal)
+                );
+            }
+
+            if (currentBedView === 'grid') {
+                container.classList.remove('table', 'cards');
+                container.classList.add('bed-grid');
+                container.style.display = 'grid';
+
+                filteredData.forEach(bed => {
+                    const el = document.createElement('div');
+                    el.className = `bed-card ${bed.status === 'Occ' ? 'occupied' : 'available'}`;
+                    el.innerHTML = `
+                        <span class="bed-status-tag">${bed.status}</span>
+                        <div class="bed-number">${bed.number}</div>
+                        ${bed.patient ? `<div class="patient-name">${bed.patient}</div>` : ''}
+                    `;
+                    container.appendChild(el);
+                });
+            } else if (currentBedView === 'table') {
+                container.classList.remove('cards', 'grid');
+                container.classList.add('table');
+                container.style.display = 'block';
+
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead><tr><th>Bed No</th><th>Patient</th><th>Gender</th><th>Status</th></tr></thead>
+                    <tbody>
+                        ${filteredData.map(b => `
+                            <tr>
+                                <td>${b.number}</td>
+                                <td>${b.patient || '-'}</td>
+                                <td>${b.gender}</td>
+                                <td><span class="badge ${b.status === 'Occ' ? 'badge-consult' : (b.status === 'NA' ? 'badge-waiting' : 'badge-admitted')}">${b.status}</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                `;
+                container.appendChild(table);
+            } else {
+                // Cards
+                container.classList.remove('grid', 'table');
+                container.classList.add('cards');
+                container.style.display = 'flex';
+                container.style.flexDirection = 'column';
+
+                filteredData.forEach(bed => {
+                    const el = document.createElement('div');
+                    el.className = `bed-card ${bed.status === 'Occ' ? 'occupied' : 'available'}`;
+                    el.style.flexDirection = 'row';
+                    el.style.justifyContent = 'space-between';
+                    el.style.padding = '0 1.5rem';
+                    el.innerHTML = `
+                        <div>
+                            <div class="bed-number">${bed.number}</div>
+                            <div class="patient-name">${bed.patient || 'Empty'}</div>
+                        </div>
+                        <div style="text-align:right">
+                            <span class="bed-status-tag">${bed.status}</span>
+                            <div style="font-size:0.8rem; color:var(--text-muted)">${bed.gender}</div>
+                        </div>
+                    `;
+                    container.appendChild(el);
+                });
+            }
+        }
+
+        function updateSummaryBanner() {
+            // Calculate stats
+            const total = bedsData.length;
+            const occupied = bedsData.filter(b => b.status === 'Occ').length;
+            const na = bedsData.filter(b => b.status === 'NA').length;
+            const dc = bedsData.filter(b => b.status === 'DC').length;
+            const male = bedsData.filter(b => b.status === 'Occ' || b.status === 'NA').filter(b => b.gender === 'M').length;
+            const female = total - male; // Simplified for demo
+
+            document.getElementById('stat-male').textContent = male;
+            document.getElementById('stat-female').textContent = female;
+            document.getElementById('stat-occupied').textContent = occupied + na; // Occupied + New Admissions active
+            document.getElementById('stat-transfers').textContent = Math.floor(Math.random() * 5); // Mock
+            document.getElementById('stat-remaining').textContent = total - (occupied + na);
+        }
+
+        // --- Module 2: OPD Logic ---
+        function renderOPD() {
+            const format = document.getElementById('opdFormat').value;
+            const statusFilter = document.getElementById('opdFilter').value;
+            const searchVal = document.getElementById('globalSearch').value.toLowerCase();
+
+            let filtered = opdData;
+            if (statusFilter !== 'all') filtered = filtered.filter(p => p.status === statusFilter);
+            if (searchVal) filtered = filtered.filter(p => p.name.toLowerCase().includes(searchVal));
+
+            const tableBody = document.getElementById('opd-table-body');
+            const gridView = document.getElementById('opd-grid-view');
+
+            tableBody.innerHTML = '';
+            gridView.innerHTML = '';
+
+            if (format === 'detailed') {
+                tableBody.innerHTML = filtered.map(p => `
+                    <tr>
+                        <td>${p.reg}</td>
+                        <td><strong>${p.name}</strong></td>
+                        <td>${p.age}/${p.sex}</td>
+                        <td>${p.diag}</td>
+                        <td><span class="badge badge-${p.status === 'Waiting' ? 'waiting' : p.status === 'In Consultation' ? 'consult' : 'referred'}">${p.status}</span></td>
+                        <td>${p.doc}</td>
+                    </tr>
+                `).join('');
+                gridView.style.display = 'none';
+            } else {
+                gridView.style.display = 'flex';
+                filtered.forEach(p => {
+                    const card = document.createElement('div');
+                    card.style.background = 'var(--bg-card)';
+                    card.style.border = '1px solid var(--border)';
+                    card.style.padding = '1rem';
+                    card.style.borderRadius = 'var(--radius)';
+                    card.style.flex = '1';
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem">
+                            <strong>${p.name}</strong>
+                            <span class="badge badge-${p.status === 'Waiting' ? 'waiting' : 'consult'}">${p.status}</span>
+                        </div>
+                        <div style="font-size:0.85rem; color:var(--text-muted)">${p.reg} | ${p.age}/${p.sex}</div>
+                        <div style="margin-top:0.5rem; font-size:0.8rem">${p.diag}</div>
+                    `;
+                    gridView.appendChild(card);
+                });
+            }
+        }
+
+        // --- Module 3: Endoscopy Logic ---
+        function renderEndoscopy() {
+            const procFilter = document.getElementById('endo-proc').value;
+            const layout = document.getElementById('endo-layout').value;
+            const tbody = document.getElementById('endo-table-body');
+
+            let filtered = endoData;
+            if(procFilter !== 'all') filtered = filtered.filter(e => e.proc === procFilter);
+
+            if(layout === 'official') {
+                // Simulate official header format
+                document.querySelector('#endo-table thead').innerHTML = `
+                    <tr>
+                        <th style="text-align:center; border:1px solid black; padding:5px;">Endoscopy Unit</th>
+                        <th style="text-align:center; border:1px solid black; padding:5px; width:50%">Procedure Details</th>
+                        <th style="text-align:center; border:1px solid black; padding:5px; width:50%">Doctor & Findings</th>
+                    </tr>
+                    <tr>
+                        <th style="border:1px solid black; padding:5px;">Date</th>
+                        <th style="border:1px solid black; padding:5px;">Time</th>
+                        <th style="border:1px solid black; padding:5px;">Endoscopist</th>
+                    '</tr>
+                `;
+            } else {
+                document.querySelector('#endo-table thead').innerHTML = `
+                    <tr><th>Time</th><th>Procedure</th><th>Endoscopist</th><th>Indication</th><th>Clinical Findings</th><th>Notes</th></tr>
+                `;
+            }
+
+            tbody.innerHTML = filtered.map(e => `
+                <tr>
+                    <td>${e.time}</td>
+                    <td>${e.proc}</td>
+                    <td>${e.doc}</td>
+                    <td>${e.ind}</td>
+                    <td>${e.find}</td>
+                    <td>${e.notes}</td>
+                </tr>
+            `).join('');
+        }
+
+        // --- Module 4: OT Logic ---
+        function renderOT() {
+            const filter = document.getElementById('ot-filter').value;
+            const tbody = document.getElementById('ot-table-body');
+
+            let filtered = otData;
+            if(filter === 'daily') filtered = otData; // Show today
+            else if(filter === 'monthly') {
+                // Mock monthly stats
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center">Monthly Statistics View (Simulated)</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(o => `
+                <tr>
+                    <td>${o.time}</td>
+                    <td>${o.surgeon}</td>
+                    <td>${o.assist}</td>
+                    <td>${o.pName}</td>
+                    <td>${o.diag}</td>
+                    <td>${o.proc}</td>
+                    <td>${o.prem}</td>
+                    <td><span class="badge ${o.status === 'Completed' ? 'badge-admitted' : (o.status === 'In Progress' ? 'badge-waiting' : 'badge-referred')}">${o.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // --- Global Helpers ---
+        function handleGlobalSearch() {
+            // Re-render current active module
+            const activeModule = document.querySelector('.module.active').id;
+            if(activeModule === 'bed-module') renderBedStatus();
+            if(activeModule === 'opd-module') renderOPD();
+            if(activeModule === 'endoscopy-module') renderEndoscopy();
+            if(activeModule === 'ot-module') renderOT();
+        }
+
+        function updateDate(val) {
+            showToast(`Date changed to ${val}`);
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+        }
+
+        function toggleSettings() {
+            const drawer = document.getElementById('settingsDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            drawer.classList.toggle('open');
+            overlay.style.display = drawer.classList.contains('open') ? 'block' : 'none';
+        }
+
+        function saveSettings() {
+            toggleSettings();
+            showToast('Settings saved successfully');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+    </script>
+</body>
+</html>
