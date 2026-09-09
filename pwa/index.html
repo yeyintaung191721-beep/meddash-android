@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>MedDash — Hospital Dashboard</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <style>
+    :root{--primary:#2563eb;--bg:#f6f7fb;--card:#fff;--muted:#64748b;--radius:10px}
+    *{box-sizing:border-box} body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:#0f172a}
+    .wrap{max-width:1100px;margin:18px auto;padding:16px}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    h1{font-size:1.15rem;margin:0}
+    .controls{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+    input[type="text"]{padding:8px;border-radius:8px;border:1px solid #e6e9f2}
+    button{padding:8px 12px;border-radius:8px;border:0;background:var(--primary);color:#fff;cursor:pointer}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+    .card{background:var(--card);padding:12px;border-radius:10px;border:1px solid #e8edf8;text-align:center}
+    .muted{color:var(--muted);font-size:.9rem}
+    footer{margin-top:16px;color:var(--muted);font-size:.9rem}
+    .offline {color:#d97706;font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>MedDash</h1>
+      <div class="muted">Offline-capable demo PWA</div>
+    </header>
+
+    <div class="controls">
+      <input id="search" type="text" placeholder="Search name, bed no..." />
+      <button id="refresh">Refresh</button>
+      <div id="status" class="muted" style="margin-left:auto">Status: <span id="online">online</span></div>
+    </div>
+
+    <section id="summary" class="grid" aria-live="polite">
+      <!-- stat cards filled by JS -->
+    </section>
+
+    <section style="margin-top:12px">
+      <h3>Bed Layout</h3>
+      <div id="beds" class="grid" style="margin-top:8px"></div>
+    </section>
+
+    <footer>
+      <div>Installable PWA • Use PWABuilder or Web2Apk to produce an APK/AAB.</div>
+      <div style="margin-top:6px" class="muted">If you see <span class="offline">offline</span> below, the app is running from the service worker cache.</div>
+    </footer>
+  </div>
+
+  <script>
+    // demo data & rendering
+    const bedsData = Array.from({length:20},(_,i)=>({id:i+1,number:`B-${100+i}`,patient:i%3===0?`Patient ${i+1}`:null,gender:i%3===0?'M':'F',status:i%5===0?'NA':(i%7===0?'DC':'Occ')}));
+    function updateSummary(){
+      const total = bedsData.length;
+      const occupied = bedsData.filter(b=>b.status==='Occ').length;
+      const na = bedsData.filter(b=>b.status==='NA').length;
+      const male = bedsData.filter(b=> (b.status==='Occ'||b.status==='NA') && b.gender==='M').length;
+      const female = total - male;
+      const remaining = total - (occupied + na);
+      const s = document.getElementById('summary');
+      s.innerHTML = '';
+      const cards = [
+        ['Total Male', male],
+        ['Total Female', female],
+        ['Occupied', occupied+na],
+        ['Transfers', Math.floor(Math.random()*5)],
+        ['Remaining', remaining]
+      ];
+      cards.forEach(([label,val])=>{
+        const el = document.createElement('div'); el.className='card';
+        el.innerHTML = `<div style="font-weight:700;font-size:1.2rem">${val}</div><div class="muted">${label}</div>`;
+        s.appendChild(el);
+      });
+    }
+    function renderBeds(){
+      const container = document.getElementById('beds'); container.innerHTML='';
+      bedsData.forEach(b=>{
+        const el = document.createElement('div'); el.className='card';
+        el.innerHTML = `<div style="font-weight:700">${b.number}</div>${b.patient?`<div style="margin-top:6px">${b.patient}</div>`:'<div class="muted">Empty</div>'}<div style="position:absolute;right:12px;top:12px;font-size:.8rem;color:#6b7280">${b.status}</div>`;
+        el.style.position='relative';
+        container.appendChild(el);
+      });
+    }
+    document.getElementById('refresh').addEventListener('click', ()=>{ updateSummary(); renderBeds(); showToast('Refreshed')});
+    function showToast(t){ console.log(t); }
+    function updateOnlineStatus(){ document.getElementById('online').textContent = navigator.onLine ? 'online' : 'offline'; if(!navigator.onLine) document.getElementById('online').classList.add('offline'); else document.getElementById('online').classList.remove('offline'); }
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateSummary(); renderBeds(); updateOnlineStatus();
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('sw.js').then(reg=>console.log('SW registered',reg.scope)).catch(e=>console.warn('SW failed',e));
+    }
+  </script>
+</body>
+</html>
